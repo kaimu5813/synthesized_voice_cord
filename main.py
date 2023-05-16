@@ -5,7 +5,9 @@ import webbrowser
 import PySimpleGUI as sg
 import pandas
 import pyperclip
+import sqlite3
 
+db = sqlite3.connect(":memory:")
 sg.theme("DarkBrown3")
 
 #レイアウト
@@ -58,6 +60,37 @@ def copy():
     """クレジットをコピペするためのイベント"""
     pyperclip.copy(values["copyright_key"])
 
+def setup_db():
+    global db
+    excel_pass = os.path.join(os.path.dirname(sys.argv[0]),'./excel/index.xlsx')
+    work_sheet = pandas.read_excel(excel_pass)
+    db.execute("CREATE TABLE credit( character text, URL text, credit text)")
+    for row in work_sheet.values:
+        db.execute(f"INSERT INTO credit (character,URL,credit) values ('{row[0]}', '{row[1]}' , '{row[2]}')")
+    db.commit()
+
+
+def get_value(name):
+    global db
+    cursor = db.cursor()
+    result = cursor.execute(f"select * from credit where character like '%{name}%'").fetchall()
+    if result is None:
+        return
+    voice = result[0][1]
+    voice_copyright = result[0][2]
+    # そのままリンクを貼るとエラーを吐くので文字列に変換する
+    text = f"{voice}"
+    window["text1"].update(text)
+    if not voice_copyright == "なし":
+        # そのまま貼るとエラー
+        copyright_text = f"{voice_copyright}"
+        window["copyright_key"].update(copyright_text)
+    else:
+        window["copyright_key"].update("")
+
+
+setup_db()
+
 while True:
     event,values = window.read()
     if event == 'btn1':
@@ -67,7 +100,7 @@ while True:
         window["text1"].update("")
         window["copyright_key"].update("")
     if event == 'btn' and not values["text"] == "":
-        excel(values["text"])
+        get_value(values["text"])
     if event =='btn2':
         if not values["copyright_key"] == "":
             copy()
