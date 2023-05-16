@@ -74,12 +74,13 @@ def get_value(name):
     global db
     cursor = db.cursor()
     result = cursor.execute(f"select * from credit where character like '%{name}%'").fetchall()
-    if result is None:
+    if len(result) == 0:
         return
     voice = result[0][1]
     voice_copyright = result[0][2]
     # そのままリンクを貼るとエラーを吐くので文字列に変換する
     text = f"{voice}"
+    window["text"].update(result[0][0])
     window["text1"].update(text)
     if not voice_copyright == "なし":
         # そのまま貼るとエラー
