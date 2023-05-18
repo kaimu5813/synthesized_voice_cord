@@ -12,8 +12,9 @@ sg.theme("DarkBrown3")
 
 #レイアウト
 layout = [[sg.T('下にキャラ名を入力してください')],
-          [sg.I(k='in1',size=(20),key='text',),sg.B('入力',key = 'btn'),sg.B('クリア',key= 'clear')],
-          [sg.I(key='text1',size=(20),readonly=True,default_text=""),sg.B('サイト遷移',key='btn1')],
+          [sg.I(k='in1', size=20, key='text',),sg.B('入力',key = 'btn'),sg.B('クリア',key= 'clear')],
+          [sg.Combo(key='search_result', size=19, enable_events=True, values=[])],
+          [sg.I(key='text1', size=20, readonly=True,default_text=""),sg.B('サイト遷移',key='btn1')],
           [sg.I(key='copyright_key',size=(20),readonly=True),
            sg.B('コピー',key='btn2')]
           ]
@@ -69,8 +70,7 @@ def setup_db():
         db.execute(f"INSERT INTO credit (character,URL,credit) values ('{row[0]}', '{row[1]}' , '{row[2]}')")
     db.commit()
 
-
-def get_value(name):
+def display_credit(name):
     global db
     cursor = db.cursor()
     result = cursor.execute(f"select * from credit where character like '%{name}%'").fetchall()
@@ -88,6 +88,17 @@ def get_value(name):
         window["copyright_key"].update(copyright_text)
     else:
         window["copyright_key"].update("")
+
+def get_value(name):
+    global db
+    cursor = db.cursor()
+    result = cursor.execute(f"select * from credit where character like '%{name}%'").fetchall()
+    result_list = []
+    for item in result:
+        result_list.append(item[0])
+    window["search_result"].update(values=result_list)
+    if len(result) != 0:
+        display_credit(result[0][0])
 
 
 setup_db()
@@ -107,6 +118,8 @@ while True:
             copy()
         else:
             pyperclip.copy("")
+    if event == "search_result":
+        display_credit(values['search_result'])
     if event == sg.WIN_CLOSED:
         break
 
